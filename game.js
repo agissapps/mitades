@@ -1,7 +1,7 @@
 // Mitades · Zairene y el Palomito
 // Plataformas cooperativas para 2 en línea (WebRTC con PeerJS) + una carrera.
 'use strict';
-const VERSION = 'v1 · 22 nov';   // cambia en cada actualización
+const VERSION = 'v2 · 22 nov';   // cambia en cada actualización
 const $ = id => document.getElementById(id);
 $('ver').textContent = VERSION;
 
@@ -10,8 +10,9 @@ const T = 16, ROWS = 17, VW = 480, VH = 272;
 const GRAV = 900, JUMP = 310, JUMP_S = 230, SPD = 90, SPD_S = 70, MAXFALL = 420;
 const FLAP_V = -90, FLAP_E = 0.75, FLAP_E_CARRY = 0.6;
 const ROOM_PREFIX = 'mitades-zyp-';
-const CH_COL = ['', '#ff7eb6', '#5b8cff', '#ffc93c'];
-const RACE = 6, LAPS = 3;
+const CH_COL = ['', '#ff7eb6', '#5b8cff', '#ffc93c', '#5fd35f', '#ff9a3c', '#b07cff'];
+const PLATES = 'abcdef', SWITCHES = 'uvwyzj', TIMED = 'qrstno', DOORS = '123456', TIMED_S = 5;
+const RACE = 6, LAPS = 5;
 
 /* ======================= NIVELES ======================= */
 // # pared · . aire · = repisa (se atraviesa desde abajo) · m ratonera (solo Zairene chiquita)
@@ -24,84 +25,93 @@ function build(w, f) {
   return g.map(r => r.join(''));
 }
 const goal = (s, x, y) => s.fill(x, y - 1, x + 1, y, 'G');
+// piezas que se repiten en los niveles
+const mouseDoor = (s, x, d) => { s.fill(x, 1, x, 12, '#'); s.fill(x, 13, x, 14, d); s.set(x, 15, 'm'); };   // puerta arriba, ratonera abajo
+const wallDoor = (s, x, d) => { s.fill(x, 1, x, 12, '#'); s.fill(x, 13, x, 15, d); };
+const water = (s, x0, x1) => s.fill(x0, 16, x1, 16, '~');
+const spikes = (s, ...xs) => xs.forEach(x => s.set(x, 15, '^'));
+const flags = (s, ...xs) => xs.forEach(x => s.set(x, 15, 'k'));
+const closet = (s, x, c) => { s.fill(x, 12, x + 4, 12, '#'); s.fill(x, 13, x, 14, '#'); s.set(x, 15, 'm'); s.fill(x + 4, 13, x + 4, 14, '#'); s.set(x + 4, 15, 'm'); s.set(x + 2, 15, c); };
+const highSwitch = (s, x, c) => { s.fill(x - 1, 10, x + 1, 10, '='); s.set(x, 9, c); };
+const spikeRoof = (s, x0, x1) => { s.fill(x0, 1, x1, 8, '#'); s.fill(x0, 9, x1, 9, '^'); };      // techo con picos: hay que volar bajito
+const pillar = (s, x) => { s.fill(x, 13, x + 1, 15, '#'); s.set(x, 12, 'k'); };
+const highGoal = (s, x0, x1, gx) => { s.fill(x0, 11, x1, 11, '#'); goal(s, gx, 10); };            // meta en lo alto: hay que cargar a Zairene
 const LEVELS = [
   {
     n: 'La Cocina', e: '🍳', wall: ['#f7c8a8', '#f0b894'], blk: ['#9a5a3a', '#c9875c', '#6e3a22'],
-    hint: 'Zairene: toca PODER para hacerte chiquita y pasa por la ratonera. Pisa el botón rosa para abrirle al Palomito. Palomito: vuela (mantén SALTAR) al interruptor azul.',
-    map: build(40, s => {
+    hint: 'Zairene: PODER = chiquita, pasa por la ratonera y pisa el botón rosa. Palomito: vuela (mantén SALTAR) al interruptor azul. ¡Ojo con los picos y el reloj!',
+    map: build(76, s => {
       s.set(2, 15, 'Z'); s.set(4, 15, 'P');
-      s.fill(10, 1, 10, 12, '#'); s.fill(10, 13, 10, 14, '1'); s.set(10, 15, 'm');
-      s.set(12, 15, 'a'); s.set(14, 15, 'k');
-      s.fill(17, 10, 19, 10, '='); s.set(18, 9, 'v');
-      s.fill(22, 1, 22, 12, '#'); s.fill(22, 13, 22, 15, '2');
-      s.set(25, 15, 'k'); s.fill(30, 13, 32, 13, '='); goal(s, 36, 15);
+      mouseDoor(s, 10, '1'); s.set(12, 15, 'a'); flags(s, 14);
+      spikes(s, 17, 18, 22, 23, 24); flags(s, 27);
+      highSwitch(s, 31, 'v'); wallDoor(s, 35, '2'); flags(s, 37);
+      s.set(40, 15, 's'); spikes(s, 44, 45, 48); wallDoor(s, 52, '3'); flags(s, 54, 58);
+      highGoal(s, 62, 70, 66);
     }),
   },
   {
     n: 'El Baño', e: '🛁', wall: ['#bfe6ef', '#a9d8e4'], blk: ['#e8eef5', '#ffffff', '#9fb2c8'],
-    hint: 'La tina es muy ancha para saltar. Zairene: hazte chiquita. Palomito: acércate y usa PODER para cargarla, y vuela con ella al otro lado.',
-    map: build(40, s => {
+    hint: 'El Palomito carga a Zairene chiquita sobre la tina. Bajo el techo de picos: ¡vuela bajito! Luego suban la caja al botón azul.',
+    map: build(84, s => {
       s.fill(1, 12, 12, 15, '#'); s.set(2, 11, 'Z'); s.set(4, 11, 'P'); s.set(7, 11, 'k');
-      s.fill(13, 16, 18, 16, '~');
-      s.set(21, 15, 'k');
-      s.fill(27, 1, 27, 12, '#'); s.fill(27, 13, 27, 14, '1'); s.set(27, 15, 'm');
-      s.set(30, 15, 'u'); goal(s, 36, 15);
+      water(s, 13, 18); flags(s, 21);
+      mouseDoor(s, 27, '1'); s.set(30, 15, 'u'); flags(s, 33);
+      spikeRoof(s, 37, 50); water(s, 37, 42); pillar(s, 43); water(s, 45, 50); flags(s, 52);
+      s.set(54, 15, 'x'); s.fill(56, 10, 57, 10, '='); s.set(56, 9, 'b'); s.set(59, 15, '#'); wallDoor(s, 61, '2'); flags(s, 63);
+      mouseDoor(s, 68, '3'); spikes(s, 70); s.set(72, 15, 'w'); goal(s, 78, 15);
     }),
   },
   {
     n: 'La Sala', e: '🛋️', wall: ['#d9c8f0', '#c9b5e6'], blk: ['#7a5a3a', '#a8805a', '#4e3622'],
-    hint: 'Zairene pisa el botón rosa y el Palomito pasa la caja por la puerta. Luego Zairene se mete al closet a pisar el botón azul… ¡y la caja la puede sustituir!',
-    map: build(40, s => {
+    hint: 'Botones, cajas y dos closets. El del reloj abre la puerta verde solo 5 segundos: el Palomito pasa y pisa el botón verde para que Zairene salga.',
+    map: build(84, s => {
       s.set(2, 15, 'Z'); s.set(4, 15, 'P'); s.set(6, 15, 'x');
-      s.set(11, 15, 'a');
-      s.fill(14, 1, 14, 12, '#'); s.fill(14, 13, 14, 14, '1'); s.set(14, 15, 'm');
-      s.set(16, 15, 'k');
-      s.fill(18, 12, 22, 12, '#'); s.fill(18, 13, 18, 14, '#'); s.set(18, 15, 'm'); s.fill(22, 13, 22, 14, '#'); s.set(22, 15, 'm'); s.set(20, 15, 'b');
-      s.fill(26, 1, 26, 12, '#'); s.fill(26, 13, 26, 15, '2');
-      s.set(28, 15, 'b'); s.set(30, 15, 'k'); goal(s, 35, 15);
+      s.set(11, 15, 'a'); mouseDoor(s, 14, '1'); flags(s, 16);
+      closet(s, 18, 'b'); wallDoor(s, 26, '2'); s.set(28, 15, 'b'); flags(s, 30);
+      closet(s, 34, 't'); wallDoor(s, 44, '4'); s.set(46, 15, 'd'); flags(s, 48);
+      s.set(50, 15, 'x'); spikes(s, 52, 53, 54, 55, 56); flags(s, 58);
+      highGoal(s, 66, 76, 71);
     }),
   },
   {
     n: 'La Recámara', e: '🛏️', wall: ['#f3d6e6', '#eac3d8'], blk: ['#8a4a6a', '#b8708f', '#5a2a44'],
-    hint: '¡Hay que subir hasta arriba! El Palomito carga a Zairene chiquita de repisa en repisa. Arriba, Zairene abre la puerta por la ratonera.',
-    map: build(32, s => {
+    hint: '¡Hasta arriba! El Palomito carga a Zairene chiquita de repisa en repisa. Arriba ella abre por la ratonera… y luego hay que bajar y seguir.',
+    map: build(70, s => {
       s.set(2, 15, 'Z'); s.set(4, 15, 'P');
-      s.fill(15, 16, 30, 16, '~');
+      water(s, 15, 30);
       s.fill(8, 11, 13, 11, '='); s.set(12, 10, 'k');
       s.fill(15, 7, 20, 7, '='); s.set(18, 6, 'k');
-      s.fill(22, 3, 30, 3, '#');
-      s.set(24, 1, '1'); s.set(24, 2, 'm'); s.set(25, 2, 'u');
-      s.fill(28, 1, 29, 2, 'G');
+      s.fill(22, 3, 36, 3, '#'); s.set(24, 1, '1'); s.set(24, 2, 'm'); s.set(25, 2, 'u'); s.set(30, 2, 'k');
+      flags(s, 40); spikes(s, 42, 43, 46, 47, 48); flags(s, 51);
+      s.set(53, 15, 'x'); s.fill(57, 10, 58, 10, '='); s.set(57, 9, 'b'); wallDoor(s, 61, '2'); flags(s, 63);
+      goal(s, 66, 15);
     }),
   },
   {
     n: 'El Jardín', e: '🌻', wall: ['#bde3f7', '#a9d6f0'], blk: ['#5a8a3a', '#7cb84e', '#3a5a24'],
-    hint: 'Crucen el estanque (¡el Palomito carga a Zairene!) y lleven la caja al botón. Arriba hay una ratonera que lleva al interruptor amarillo.',
-    map: build(44, s => {
+    hint: 'Estanque, caja, una ratonera en lo alto, un techo de picos y un reloj. ¡Trabajo en equipo!',
+    map: build(88, s => {
       s.set(2, 15, 'Z'); s.set(4, 15, 'P'); s.set(7, 15, 'x');
-      s.fill(10, 16, 15, 16, '~');
-      s.set(17, 15, 'k'); s.set(19, 15, 'a');
-      s.fill(22, 1, 22, 12, '#'); s.fill(22, 13, 22, 15, '1');
-      s.set(25, 15, 'a'); s.set(27, 15, 'k');
+      water(s, 10, 15); flags(s, 17); s.set(19, 15, 'a'); wallDoor(s, 22, '1'); s.set(25, 15, 'a'); flags(s, 27);
       s.fill(26, 12, 27, 12, '='); s.fill(29, 9, 31, 9, '=');
       s.fill(32, 1, 32, 12, '#'); s.set(32, 8, 'm'); s.fill(32, 13, 32, 15, '3');
-      s.fill(33, 9, 36, 9, '='); s.set(36, 8, 'w');
-      s.set(35, 15, 'k'); goal(s, 40, 15);
+      s.fill(33, 9, 36, 9, '='); s.set(36, 8, 'w'); flags(s, 35, 39);
+      spikeRoof(s, 42, 54); water(s, 42, 47); pillar(s, 48); water(s, 50, 54); flags(s, 56);
+      s.set(59, 15, 't'); spikes(s, 62, 63); wallDoor(s, 66, '4'); s.set(68, 15, 'd'); flags(s, 70);
+      highGoal(s, 74, 84, 79);
     }),
   },
   {
     n: 'El Ático', e: '🏚️', wall: ['#c8b8a0', '#b8a68c'], blk: ['#6a5040', '#907060', '#40302a'],
-    hint: 'El gran final: closet con botón, caja, tina y un interruptor muy alto. ¡Ustedes pueden!',
-    map: build(48, s => {
+    hint: 'El gran final: closets, cajas, tinas, picos, relojes y la meta en lo alto. ¡Ustedes pueden!',
+    map: build(96, s => {
       s.set(2, 15, 'Z'); s.set(4, 15, 'P'); s.set(6, 15, 'x');
-      s.fill(9, 12, 13, 12, '#'); s.fill(9, 13, 9, 14, '#'); s.set(9, 15, 'm'); s.fill(13, 13, 13, 14, '#'); s.set(13, 15, 'm'); s.set(11, 15, 'a');
-      s.set(15, 15, 'k');
-      s.fill(17, 1, 17, 12, '#'); s.fill(17, 13, 17, 15, '1');
-      s.set(19, 15, 'a'); s.set(20, 15, 'k');
-      s.fill(22, 16, 27, 16, '~');
-      s.set(29, 15, 'k'); s.set(33, 8, 'w');
-      s.fill(37, 1, 37, 12, '#'); s.fill(37, 13, 37, 15, '3');
-      s.set(39, 15, 'k'); goal(s, 44, 15);
+      closet(s, 9, 'a'); flags(s, 15); wallDoor(s, 17, '1'); s.set(19, 15, 'a'); flags(s, 20);
+      water(s, 22, 27); flags(s, 29); s.set(33, 8, 'w'); wallDoor(s, 37, '3'); flags(s, 39);
+      closet(s, 42, 'r'); wallDoor(s, 50, '2'); s.set(52, 15, 'b'); flags(s, 54);
+      s.set(56, 15, 'x'); spikes(s, 58, 59, 60, 61, 62); flags(s, 64);
+      spikeRoof(s, 67, 79); water(s, 67, 72); pillar(s, 73); water(s, 75, 79); flags(s, 81);
+      highGoal(s, 84, 94, 89);
     }),
   },
 ];
@@ -134,7 +144,7 @@ let isHost = true, solo = false, myIdx = 0, myChar = 'z';
 let peer = null, conn = null;
 let phase = 'menu';          // menu | lobby | play | clear | race | end
 let lv = 0, MAP = LEVELS[0].map, LW = MAP[0].length;
-let players = [], boxes = [], chn = [false, false, false, false], swOn = {}, effects = [], sndQ = [];
+let players = [], boxes = [], chn = [false, false, false, false, false, false, false], swOn = {}, swT = {}, effects = [], sndQ = [];
 let plates = [], switches = [], spawn = {};
 let roundId = 0, seenRound = -1, clearT = 0, story = false, hintT = 0, endInfo = null;
 let up = 0;                  // nivel más alto desbloqueado
@@ -167,7 +177,7 @@ const SFX = {
   sw: () => { tone(988, .08, 'triangle', .08); tone(1319, .15, 'triangle', .08, 0, .07); }, flag: () => tone(784, .12, 'triangle', .06),
   win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, 'triangle', .1, 0, i * .12)); },
   beep: () => tone(440, .12, 'square', .05), go: () => tone(880, .35, 'square', .06), boost: () => tone(300, .3, 'sawtooth', .04, 600),
-  slip: () => tone(200, .3, 'triangle', .06, 300), lap: () => { tone(784, .1, 'square', .05); tone(988, .15, 'square', .05, 0, .1); },
+  slip: () => tone(200, .3, 'triangle', .06, 300), tick: () => tone(1200, .04, 'square', .03), lap: () => { tone(784, .1, 'square', .05); tone(988, .15, 'square', .05, 0, .1); },
 };
 function play(n) { SFX[n] && SFX[n](); }
 function sfx(n) { play(n); if (isHost && !solo) sndQ.push(n); }   // anfitrión: suena y avisa al invitado
@@ -181,7 +191,7 @@ function tile(tx, ty) {
 function solidT(c, small) {
   if (c === '#') return true;
   if (c === 'm') return !small;
-  if (c === '1' || c === '2' || c === '3') return !chn[+c];
+  if (DOORS.includes(c)) return !chn[+c];
   return false;
 }
 function hitsSolid(x, y, w, h, small) {
@@ -196,12 +206,18 @@ function touches(b, test) {   // ¿alguna casilla que toca el cuerpo cumple test
   for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const r = test(tile(tx, ty), tx, ty); if (r) return r; }
   return null;
 }
+function spikeHit(b, tx, ty) {   // los picos lastiman solo en su parte puntiaguda
+  const down = solidT(tile(tx, ty - 1), false);
+  const L = tx * T + 3, R = tx * T + T - 3, top = ty * T + (down ? 0 : 8), bot = ty * T + (down ? 8 : T);
+  return b.x + b.w / 2 > L && b.x - b.w / 2 < R && b.y > top && b.y - b.h < bot;
+}
+const hurts = b => b.y > ROWS * T + 30 || !!touches(b, (c, tx, ty) => c === '~' || (c === '^' && spikeHit(b, tx, ty)));
 function loadLevel(i) {
   lv = i;
   if (i === RACE) { setupRace(); return; }
   const L = LEVELS[i];
   MAP = L.map.map(r => r); LW = MAP[0].length;
-  boxes = []; plates = []; switches = []; swOn = {}; chn = [false, false, false, false]; spawn = {};
+  boxes = []; plates = []; switches = []; swOn = {}; swT = {}; chn = [false, false, false, false, false, false, false]; spawn = {};
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < LW; x++) {
     const c = MAP[y][x];
     if (c === 'Z' || c === 'P' || c === 'x') {
@@ -209,8 +225,9 @@ function loadLevel(i) {
       if (c === 'x') boxes.push({ x: pos.x, y: pos.y, vy: 0, by: -1 }); else spawn[c.toLowerCase()] = pos;
       MAP[y] = MAP[y].slice(0, x) + '.' + MAP[y].slice(x + 1);
     }
-    if ('abc'.includes(c)) plates.push({ x, y, n: 'abc'.indexOf(c) + 1 });
-    if ('uvw'.includes(c)) switches.push({ x, y, n: 'uvw'.indexOf(c) + 1, k: x + ',' + y });
+    if (PLATES.includes(c)) plates.push({ x, y, n: PLATES.indexOf(c) + 1 });
+    if (SWITCHES.includes(c)) switches.push({ x, y, n: SWITCHES.indexOf(c) + 1, k: x + ',' + y });
+    if (TIMED.includes(c)) switches.push({ x, y, n: TIMED.indexOf(c) + 1, k: x + ',' + y, timed: true });
   }
 }
 function placeAtSpawn(b) {
@@ -242,7 +259,8 @@ function platformTop(b, y0, y1) {
   return best;
 }
 function respawn(b) {
-  sfx('splash'); fxText(b.x, b.y - 20, '¡splash!', '#9fdcff');
+  const spk = touches(b, c => c === '^');
+  sfx('splash'); fxText(b.x, b.y - 20, spk ? '¡auch!' : '¡splash!', spk ? '#ff6b6b' : '#9fdcff');
   b.x = b.cp.x; b.y = b.cp.y; b.vx = b.vy = 0; b.dx = b.x; b.dy = b.y;
   if (b.small && hitsSolid(b.x, b.y, 9, 14, false)) { } else { b.small = false; b.w = 9; b.h = 14; }
 }
@@ -294,7 +312,7 @@ function stepBody(b, inp, dt) {
   }
   b.y = ny;
   // agua, vacío y banderitas
-  if (b.y > ROWS * T + 30 || touches(b, c => c === '~')) { respawn(b); return; }
+  if (hurts(b)) { respawn(b); return; }
   const flag = touches(b, (c, tx, ty) => c === 'k' ? { x: tx * T + 8, y: (ty + 1) * T } : null);
   if (flag && (!b.cp || b.cp.x !== flag.x || b.cp.y !== flag.y)) { b.cp = flag; if (b === players[myIdx] || solo) { play('flag'); fxText(flag.x, flag.y - 26, '✓', '#7cff7c'); } }
 }
@@ -332,7 +350,7 @@ const onTile = (b, tx, ty, w) => b.y > ty * T + 2 && b.y <= (ty + 1) * T + 1 && 
 function updateWorld(dt) {
   if (phase !== 'play') return;
   // Zairene ya no está chiquita: el Palomito la suelta
-  players.forEach(p => { if (p.carry && p.carry.k === 'z') { const z = players.find(q => q.ch === 'z'); if (!z || !z.small) p.carry = null; } });
+  players.forEach(p => { if (p.carry && p.carry.k === 'z') { const z = players.find(q => q.ch === 'z'); if (!z || !z.small || hurts(z)) p.carry = null; } });
   // cajas
   boxes.forEach(bx => {
     if (bx.by >= 0) { const c = players[bx.by]; if (!c || !c.carry || c.carry.k !== 'box') { bx.by = -1; return; } bx.x = c.x; bx.y = c.y - c.h; bx.vy = 0; return; }
@@ -354,18 +372,25 @@ function updateWorld(dt) {
     }
   });
   // botones, interruptores y puertas
-  const prev = chn.slice(); chn = [false, false, false, false];
+  const prev = chn.slice(); chn = [false, false, false, false, false, false, false];
   plates.forEach(pl => {
     pl.on = players.some(b => !carrierOf(b) && onTile(b, pl.x, pl.y, b.w)) || boxes.some(bx => bx.by < 0 && onTile(bx, pl.x, pl.y, 12));
     if (pl.on) chn[pl.n] = true;
   });
   switches.forEach(s => {
+    if (s.timed) {
+      const t0 = swT[s.k] || 0;
+      if (players.some(b => touches(b, (c, tx, ty) => tx === s.x && ty === s.y))) { if (t0 <= 0) { sfx('sw'); fxText(s.x * T + 8, s.y * T - 6, '¡rápido!', CH_COL[s.n]); } swT[s.k] = TIMED_S; }
+      else if (t0 > 0) { swT[s.k] = t0 - dt; if (Math.floor(t0) !== Math.floor(t0 - dt) && t0 < TIMED_S - 0.5) sfx('tick'); }
+      if (swT[s.k] > 0) chn[s.n] = true;
+      return;
+    }
     if (!swOn[s.k] && players.some(b => touches(b, (c, tx, ty) => tx === s.x && ty === s.y))) {
       swOn[s.k] = true; sfx('sw'); fxText(s.x * T + 8, s.y * T - 6, '¡clic!', CH_COL[s.n]);
     }
     if (swOn[s.k]) chn[s.n] = true;
   });
-  for (let n = 1; n <= 3; n++) if (chn[n] !== prev[n]) { sfx('door'); break; }
+  for (let n = 1; n <= 6; n++) if (chn[n] !== prev[n]) { sfx('door'); break; }
   // meta: los dos en el corazón
   if (players.length === 2 && players.every(b => touches(b, c => c === 'G'))) {
     phase = 'clear'; clearT = 2.6; sfx('win');
@@ -577,7 +602,7 @@ function bodyMsg(p) {
 }
 function snapshot() {
   const s = {
-    t: 's', ph: phase, lv, rid: roundId, story, chn, sw: swOn, ct: clearT, hint: hintT, end: endInfo, pick: pickLv,
+    t: 's', ph: phase, lv, rid: roundId, story, chn, sw: swOn, swt: swT, ct: clearT, hint: hintT, end: endInfo, pick: pickLv,
     bx: boxes.map(b => [r1(b.x), r1(b.y), b.by]), fx: effects, snd: sndQ,
     rc: { cd: +race.cd.toFixed(2), t: +race.t.toFixed(2), win: race.win },
     pl: players.map(bodyMsg),
@@ -590,7 +615,7 @@ function applySnap(s) {
     const fresh = s.rid !== seenRound; seenRound = s.rid; loadLevel(s.lv);
     if (fresh) players.forEach((p, i) => { if (!p) return; if (s.lv === RACE) p.car = newCar(i); else placeAtSpawn(p); });
   }
-  story = s.story; chn = s.chn; swOn = s.sw; clearT = s.ct; hintT = s.hint; endInfo = s.end; effects = s.fx;
+  story = s.story; chn = s.chn; swOn = s.sw; swT = s.swt || {}; clearT = s.ct; hintT = s.hint; endInfo = s.end; effects = s.fx;
   race.cd = s.rc.cd; race.t = s.rc.t; race.win = s.rc.win;
   if (s.pick !== pickLv) { pickLv = s.pick; refreshLevelUI(); }
   boxes = s.bx.map(([x, y, by]) => ({ x, y, by, vy: 0 }));
@@ -772,19 +797,36 @@ function drawTile(c, tx, ty, L, now) {
     if (top) { const o = Math.floor(now / 200 + tx) % 4; r(X, Y, T, 3, '#7cc4ff'); r(X + o * 4, Y, 3, 1, '#ffffff'); }
     return;
   }
-  if (c === '1' || c === '2' || c === '3') {
+  if (DOORS.includes(c)) {
     const n = +c, col = CH_COL[n];
     if (!chn[n]) { r(X + 2, Y, 12, T, '#2a2040'); for (let i = 0; i < 3; i++) r(X + 3 + i * 4, Y, 2, T, col); r(X + 2, Y, 1, T, '#000'); r(X + 13, Y, 1, T, '#000'); }
     else { r(X + 2, Y, 1, T, col); r(X + 13, Y, 1, T, col); }
     return;
   }
-  if ('abc'.includes(c)) {
-    const n = 'abc'.indexOf(c) + 1, pl = plates.find(p => p.x === tx && p.y === ty), on = pl && pl.on;
+  if (PLATES.includes(c)) {
+    const n = PLATES.indexOf(c) + 1, pl = plates.find(p => p.x === tx && p.y === ty), on = pl && pl.on;
     r(X + 1, Y + 14, 14, 2, '#3a3040'); r(X + 3, Y + (on ? 13 : 11), 10, on ? 1 : 3, CH_COL[n]); r(X + 3, Y + (on ? 13 : 11), 10, 1, '#fff8');
     return;
   }
-  if ('uvw'.includes(c)) {
-    const n = 'uvw'.indexOf(c) + 1, on = swOn[tx + ',' + ty];
+  if (TIMED.includes(c)) {
+    const n = TIMED.indexOf(c) + 1, t = swT[tx + ',' + ty] || 0;
+    r(X + 2, Y + 1, 12, 14, '#2a2040'); r(X + 3, Y + 2, 10, 12, t > 0 ? CH_COL[n] : '#5a5070');
+    r(X + 7, Y + 4, 2, 5, '#fff'); r(X + 7, Y + 8, 4, 1, '#fff');
+    if (t > 0) { r(X, Y - 4, 16, 3, '#000'); r(X + 1, Y - 3, Math.round(14 * t / TIMED_S), 1, t < 1.5 ? '#ff6b6b' : CH_COL[n]); }
+    else if (Math.floor(now / 300) % 2) { r(X + 1, Y, 14, 1, CH_COL[n]); r(X + 1, Y + 15, 14, 1, CH_COL[n]); }
+    return;
+  }
+  if (c === '^') {
+    const down = solidT(tile(tx, ty - 1), false);
+    for (let k = 0; k < 4; k++) {
+      const px = X + k * 4;
+      if (down) { r(px, Y, 4, 2, '#9aa4b8'); r(px + 1, Y + 2, 2, 4, '#c8d0e0'); r(px + 1, Y + 6, 1, 2, '#ffffff'); }
+      else { r(px, Y + 14, 4, 2, '#9aa4b8'); r(px + 1, Y + 10, 2, 4, '#c8d0e0'); r(px + 1, Y + 8, 1, 2, '#ffffff'); }
+    }
+    return;
+  }
+  if (SWITCHES.includes(c)) {
+    const n = SWITCHES.indexOf(c) + 1, on = swOn[tx + ',' + ty];
     r(X + 3, Y + 2, 10, 12, '#2a2040'); r(X + 4, Y + 3, 8, 10, on ? CH_COL[n] : '#5a5070');
     r(X + 6, on ? Y + 4 : Y + 9, 4, 3, '#fff');
     if (!on && Math.floor(now / 300) % 2) { r(X + 2, Y + 1, 12, 1, CH_COL[n]); r(X + 2, Y + 14, 12, 1, CH_COL[n]); }

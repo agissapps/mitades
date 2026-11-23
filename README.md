@@ -9,7 +9,9 @@ Puzzles cooperativos en pixel art para **2 jugadores en línea**, para teléfono
 ## Mundo 1 · La Casa
 1. 🍳 La Cocina · 2. 🛁 El Baño · 3. 🛋️ La Sala · 🏎️ **Gran Premio de la Sala** · 4. 🛏️ La Recámara · 5. 🌻 El Jardín · 6. 🏚️ El Ático
 
-Después del nivel 3 hay una carrera de carritos entre los dos (3 vueltas, turbos y charcos de jugo). Después queda en el menú como **Carreras**.
+**v2:** niveles el doble de largos y más difíciles: **picos** (en el piso y en el techo, ¡vuela bajito!), **interruptores con reloj** que abren una puerta solo 5 segundos, closets, cajas sobre repisas y metas en lo alto (el Palomito tiene que subir a Zairene).
+
+Después del nivel 3 hay una carrera de carritos entre los dos (5 vueltas, turbos y charcos de jugo). Después queda en el menú como **Carreras**.
 
 ## Cómo jugar juntos
 1. Uno toca **Crear sala** y envía el código o el enlace 💌.

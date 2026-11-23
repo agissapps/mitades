@@ -1,8 +1,8 @@
 // Guarda el juego en el dispositivo para que la app abra aunque no haya página o internet.
 // Archivos del juego: primero intenta la red (para recibir actualizaciones) y si no hay, usa la copia guardada.
 // Archivos de fuera (PeerJS, letra): usa la copia guardada y la renueva en segundo plano.
-const CACHE = 'mitades-v1';
-const CORE = ['./', './index.html', './game.js?v=1', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
+const CACHE = 'mitades-v2';
+const CORE = ['./', './index.html', './game.js?v=2', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 const EXTRA = ['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'];
 
 self.addEventListener('install', e => {
